@@ -1,3 +1,5 @@
+import { buildPeriodicTable, atomMeshes } from './periodicTable.js';
+
 const container = document.getElementById('vr-container');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -42,6 +44,22 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.maxPolarAngle = Math.PI / 2;
+
+const raycaster = new THREE.Raycaster();
+buildPeriodicTable(scene, raycaster, camera);
+
+// Click detection: raycast against the periodic table tiles.
+const clickPointer = new THREE.Vector2();
+renderer.domElement.addEventListener('click', (event) => {
+  clickPointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+  clickPointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(clickPointer, camera);
+  const hits = raycaster.intersectObjects(atomMeshes, false);
+  if (hits.length > 0) {
+    const el = hits[0].object.userData.element;
+    console.log(`Selected element: ${el.atomicNumber} ${el.symbol} (${el.name})`);
+  }
+});
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
