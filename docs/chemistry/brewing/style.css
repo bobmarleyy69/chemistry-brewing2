@@ -1,0 +1,8 @@
+body,
+#vr-container {
+  margin: 0;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  background: #0a0e1a;
+}
