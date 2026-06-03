@@ -1,4 +1,5 @@
 import { buildPeriodicTable, atomMeshes } from './periodicTable.js';
+import { spawnAtom, updateAtoms, initDrag } from './atomBuilder.js';
 
 const container = document.getElementById('vr-container');
 
@@ -44,13 +45,19 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.maxPolarAngle = Math.PI / 2;
+scene.userData.controls = controls;
 
 const raycaster = new THREE.Raycaster();
 buildPeriodicTable(scene, raycaster, camera);
+initDrag(camera, renderer, scene);
 
 // Click detection: raycast against the periodic table tiles.
 const clickPointer = new THREE.Vector2();
 renderer.domElement.addEventListener('click', (event) => {
+  if (scene.userData.suppressNextClick) {
+    scene.userData.suppressNextClick = false;
+    return;
+  }
   clickPointer.x = (event.clientX / window.innerWidth) * 2 - 1;
   clickPointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(clickPointer, camera);
@@ -58,6 +65,7 @@ renderer.domElement.addEventListener('click', (event) => {
   if (hits.length > 0) {
     const el = hits[0].object.userData.element;
     console.log(`Selected element: ${el.atomicNumber} ${el.symbol} (${el.name})`);
+    spawnAtom(el, scene);
   }
 });
 
@@ -67,8 +75,12 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+const clock = new THREE.Clock();
+
 function animate() {
+  const delta = clock.getDelta();
   particles.rotation.y += 0.0003;
+  updateAtoms(delta, clock);
   controls.update();
   renderer.render(scene, camera);
 }
